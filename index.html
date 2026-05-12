@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>歷史觀測站 - 關鍵抉擇</title>
+
+<style>
+        /* --- 1. 整體背景與字體 --- */
+        body {
+            /* 網頁最底層的背景顏色 (現在是深灰色 #1a1a1a) */
+            background: #1a1a1a; 
+            /* 全局文字顏色 (現在是淺灰色 #e0e0e0) */
+            color: #e0e0e0; 
+            /* 全局字體設定 (建議保留 Segoe UI, JhengHei 是微軟正黑體) */
+            font-family: 'Segoe UI', 'Microsoft JhengHei', Tahoma, sans-serif; 
+            
+            /* 以下保留，負責置中 */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0;
+            padding: 18px 0; 
+            box-sizing: border-box; /* 確保 padding 不會撐破總寬度 */
+            overflow-x: hidden;    /* 防止左右出現討厭的捲軸 */
+        }
+
+        /* --- 2. 遊戲主對話框 (框架) --- */
+        #game-board {
+            /* 框架的寬度 (現在是 90%，最大 600px) */
+            width: 80%; 
+            max-width: 600px;
+            margin: 0 auto;  /* 確保在視窗縮小時，它還能盡量維持在中間 */ 
+            
+            /* 框架的背景顏色 (現在是較淺的深灰 #2d2d2d) */
+            background: #2d2d2d; 
+            /* 框架邊框：粗細 樣式 顏色 (現在是 2px 實線 灰色 #4a4a4a) */
+            border: 6px solid #4a4a4a; 
+            /* 框架圓角 (數值越大越圓) */
+            border-radius: 10px; 
+            
+            /* 框架陰影：水平 垂直 模糊 顏色 (現在是黑色 0.5 透明度) */
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+            
+            /* 以下保留 */
+            position: relative; 
+            padding: 20px; 
+        }
+
+        /* --- 3. 頂部狀態列 (位置與穩定值) --- */
+        .stats {
+            display: flex; 
+            flex-direction: column;   /* 強制換行 */
+            align-items: flex-start;  /* 強制靠左 */
+            justify-content: flex-start;
+            width: 100%;             /* 佔滿寬度 */
+            text-align: left;        /* 文字對齊靠左 */
+            margin-bottom: 20px; 
+            border-bottom: 3px solid #4a4a4a; 
+            padding-bottom: 12px; 
+            color: #81c784; 
+            font-weight: bold; 
+            font-size: 1.1rem; 
+            gap: 5px;                /* 兩行文字的間距 */
+        }
+
+        /* --- 4. 核心對話文本區 --- */
+        #dialog-box {
+            /* 對話框的最小高度，確保文字變多時不會亂跳 */
+            min-height: 160px; 
+            
+            /* ⭐字體大小 (現在是 1.1rem，約 17.6px)⭐ */
+            /* 妳可以改成 1.2rem 或 1.3rem 讓字變大 */
+            font-size: 1.2rem; 
+            
+            /* 行高 (決定段落間距，建議 1.6-1.8 閱讀最舒服) */
+            line-height: 1.6; 
+            margin-bottom: 36px; 
+        }
+
+        /* --- 5. 選項按鈕 (基本樣式) --- */
+        .option-btn {
+         	/* 按鈕背景顏色 */
+            background: #3F3F3F; 
+            
+           	/* 按鈕邊框 */
+            border: 2px solid #555; 
+            
+            /* 按鈕文字顏色 */
+            color: #fff; 
+            
+           	/* 按鈕內距 (上下 左右) */
+            padding: 10px 16px; 
+            margin-bottom: 8px; 
+            width: 100%; 
+            text-align: left; 
+            cursor: pointer; 
+            
+       	    /* 按鈕圓角 */
+            border-radius: 8px; 
+            
+           	 /* 按鈕字體大小 (預設通常繼承 body)⭐ */
+           	 /* 加上這行來單獨控制按鈕字體： font-size: 1rem; */
+            font-size: 1.2rem;            
+
+         	  /* 以下保留，負責動畫效果 */
+            transition: all 0.2s;
+            min-height: 60px; /*<--確保高度緊湊*/
+        }
+
+            /* --- 專屬按鈕標籤 (Tag) 樣式 --- */
+        .btn-tag {
+            display: inline-block; /* 讓標籤可以有自己的內距 */
+            background: #0a3030;   /* 標籤背景色(呼應妳的 hover 設定) */
+            color: #FFFFFF;        /* 標籤文字顏色 */
+            padding: 1px 8px;     /* 上下 1px，左右 8px 的空間 */
+            border-radius: 8px;   /* 圓角，讓它看起來像個小藥丸 */
+            font-size: 0.8rem;     /* 字體稍微小一點點，區分主文 */
+            font-weight:normal ;     /* 字體加粗可改bold */
+            margin-bottom: 4px;    /* 和下方的文字拉開一點距離 */
+            border: 2px solid #006666; /* 加上淡淡的邊框 */
+            letter-spacing: 1px;   /* 字距稍微拉開一點點 */
+        }
+
+        /* --- 6. 選項按鈕 (滑鼠滑過時的樣式) --- */
+        .option-btn:hover {
+            /* 滑過時的背景顏色 (現在是亮綠色 #4caf50) */
+            background: #007979; 
+            
+            /* 滑過時的邊框顏色 */
+            border-color: #80FFFF; 
+            
+            /* 滑過時向右位移的動畫 */
+            transform: translateX(5px); 
+        }
+
+        /* --- 7. 警告文字 --- */
+         .alert {
+   	        color: #ff5252;
+ 	        font-weight: bold;
+ 	        margin-top: 10px;
+ 	        display: none;
+	    }
+
+        /* --- 8. 最終結算區 (確保 display: none 正常運作) --- */
+        #final-score {
+   	        text-align: center;
+            display: none; 
+  	        margin-top: 20px;
+  	        padding: 20px;
+            background:rgba(44, 44, 44, 0.2); /* 加一點深色背景，讓結算感更重 */
+            border-radius: 8px;
+        }
+        
+        /* --- 9. 版權宣告 --- */
+        .credits {
+            position: absolute; /* 絕對定位 */
+            bottom: 6px;      /* 距離底部 8 像素 */
+            right: 15px;       /* 距離右邊 15 像素 */
+            font-size: 14px;   /* 小字體 */
+            color: rgba(255, 255, 255, 0.4); /* 淡淡的半透明白色 */
+            text-align: right;
+            line-height: 1.5;
+            pointer-events: none; /* 讓滑鼠點擊穿透，不會擋到按鈕 */
+            font-family: sans-serif;
+        }
+        
+        /* --- 10. 手機版 RWD 調整 --- */
+        @media (max-width: 600px) {
+            body {
+                min-height: 100vh;  /* 至少佔滿螢幕 */
+                height: auto;       /* 內容超過時自動長高，不會把按鈕擠出框外 */
+                display: flex;
+                flex-direction: column;
+                justify-content: center; /* 電腦版維持置中 */
+                align-items: center;
+                padding: 14px 0;    /* 給手機版一點上下留白 */
+                box-sizing: border-box;
+                overflow-x: hidden;    /* 防止左右出現討厭的捲軸 */
+            }
+
+            #game-board {
+                width: 85%; 
+                min-height: auto; 
+                margin-top: 10px;
+                margin-bottom: 10px;
+                padding-bottom: 40px; /* 給最下面的版權文字留點空間 */
+            }
+
+            /* 2. 狀態列強制垂直且靠左 */
+            .stats {
+                display: flex !important;
+                flex-direction: column !important; /* 強制變直視窗排列 */
+                align-items: flex-start !important; /* 絕對靠左 */
+                text-align: left !important;
+                width: 100% !important;
+                margin-bottom: 15px; 
+                padding-bottom: 8px;
+                gap: 3px;
+            }
+
+            /* 3. 確保狀態列裡面的文字也是靠左 */
+            .stats span, .stats div {
+                text-align: left !important;
+                margin-left: 0 !important;
+            }
+
+            /* 4. 選項按鈕美化：讓手在大拇指範圍內好點擊 */
+            .option-btn {
+                text-align: center; /* 按鈕文字在手機上置中比較好看 */
+                padding: 12px 10px; /* 👈 原本可能是 15px 或 18px，縮小一點 */
+                min-height: 50px;   /* 👈 稍微降低最小高度限制 */
+                margin-bottom: 10px;
+                font-size: 1rem;    /* 字體稍微縮小一點點，平衡視覺 */
+            }
+
+            .btn-tag {
+                font-size: 0.75rem; /* 標籤也同步縮小一點點 */
+                margin-bottom: 2px;
+            }
+
+            /* 署名 */
+            .credits {
+                font-size: 8px;
+                bottom: 5px;
+                right: 10px;
+            }
+        } /* <--- 這是整個手機版設定唯一的結尾括號 */
+
+</style>
+
+</head>
+<body>
+
+<div id="game-board">
+    <div id="login-screen" style="text-align: center; padding: 20px 0;">
+        <h2 style="color: #81c784; margin-bottom: 20px;">歷史觀測站 - 關鍵抉擇</h2>
+        <p>請輸入妳的代號或名稱：</p>
+        <input type="text" id="player-name-input" placeholder="例如：Xizuku" 
+               style="padding: 8px; font-size: 1.1rem; border-radius: 8px; border: 2px solid #555; background: #3F3F3F; color: #fff; margin-bottom: 30px; width: 80%; max-width: 250px; text-align: center;">
+        <br>
+        <button class="option-btn" onclick="initGame()" style="text-align: center; width: 80%; max-width: 200px;">進入時空觀測站</button>
+    </div>
+    <div id="game-ui" style="display: none;">
+        <div class="stats">
+            <span>👤 觀測員：<span id="player-name-display" style="color: #fff;"></span></span>
+            <span>📍 目前位置：<span id="loc">時空傳送中</span></span>
+            <span>⌛ 歷史穩定值：<span id="stability">100</span>%</span>
+        </div>
+        
+        <div id="main-content">
+            <div id="dialog-box">正在連線至歷史資料庫......</div>
+            <div id="options-container"></div>
+        </div>
+    </div>
+
+    <div id="final-score" style="display: none;"> <h2>觀測結束</h2>
+        <div id="score-text"></div>
+        <button class="option-btn" onclick="returnToHub()" style="text-align:center; background: #007979;">🚀 回到觀測站</button>
+        <button class="option-btn" onclick="location.reload()" style="text-align:center; background: #555; font-size: 1rem; min-height: 30px; margin-top: 15px;">切換觀測員 (重新登入)</button>
+    </div>
+    <div class="credits">
+        2026.04.16　Created by Xizuku
+    </div>
+</div>
+
+<script>
+            // ⭐ 劇本總清單：以後新劇本只要加在這裡，程式會自動按年份排好！
+    const scenarioList = [
+        { year: 208,  title: "三國時代 - 赤壁大戰", node: "three_kingdoms_1" },
+        { year: 353,  title: "魏晉風流 - 蘭亭雅集", node: "jin_1" },
+        { year: 751,  title: "怛羅斯之戰 - 造紙技術西傳", node: "tang_1" },
+        { year: 1000, title: "北宋汴京 - 商業革命", node: "song_1" },
+        { year: 1271, title: "馬可波羅 - 東方見聞錄", node: "marco_polo_1" },
+        { year: 1624, title: "熱蘭遮城 - 大航海時代", node: "taiwan_1" },
+        { year: 1860, title: "清領府城 - 糖業與貿易", node: "taiwan_sugar" },
+        { year: 1932, title: "昭和台南 - 銀座林百貨", node: "japanese_showa" },
+        { year: 1945, title: "二戰終局 - 戰後台灣", node: "post_war_1" }
+    ];
+    // ⭐ 自動按年份排序（從小到大）
+    scenarioList.sort((a, b) => a.year - b.year);
+
+    let stability = 100;
+    let currentStep = 'start';
+
+    function updateGame(node) {
+        console.log("👉 目前進入節點：", node); // 追蹤 1
+        // 1. 先從 scenarios 抓出目前的劇本內容
+        const scenario = scenarios[node];
+        if (!scenario) {
+            console.error("找不到節點：", node);
+            return;      // 安全檢查
+        }
+
+        // 2. 自動生成劇本按鈕
+        if (node === 'start' || node === 'start_page_2') {
+            const page = (node === 'start') ? 1 : 2;
+            const itemsPerPage = 5; 
+            const startIdx = (page - 1) * itemsPerPage;
+            const endIdx = startIdx + itemsPerPage;
+            const currentItems = scenarioList.slice(startIdx, endIdx);
+
+            scenario.options = currentItems.map(item => ({
+                text: `【西元 ${item.year} 年】\n${item.title}`,
+                next: item.node
+            }));
+
+            if (scenarioList.length > endIdx && page === 1) {
+                scenario.options.push({ text: "▶ 【前往下一個站台】\n觀測更多時空節點", next: "start_page_2" });
+            }
+            if (page === 2) {
+                scenario.options.push({ text: "◀ 【返回第一站台】", next: "start" });
+            }
+        }
+       
+// 3. 特殊節點判斷：如果回到起點，就恢復血量
+        if (node === 'start') {
+            stability = 100;
+            document.getElementById('stability').innerText = stability;
+        }
+// 3.5 如果是結束點，跳轉結算頁	
+        if (node === 'end') {
+            console.log("🏁 偵測到 end，準備啟動 showEnd()"); // 追蹤 3
+            showEnd();
+            return;
+        }
+         // 2.5 更新畫面基礎資訊 (先更新地點，showEnd 才能抓到正確的字)
+            console.log("📝 準備更新文字...", scenario.loc); // 追蹤 2
+            document.getElementById('loc').innerText = scenario.loc;
+            let finalDisplayText = scenario.text
+                .replace(/\${name}/g, playerName); 
+
+            document.getElementById('dialog-box').innerText = finalDisplayText;
+                        currentStep = node;
+              
+// 4. 生成按鈕
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+
+        scenario.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+
+            // ⭐ 標籤化魔法在這裡 ⭐
+            // 1. 抓取 【 】 裡面的文字，替換成帶有 btn-tag 樣式的 span 
+            // 2. 將劇本裡的換行符號 \n 替換成 HTML 的換行標籤 <br>
+            let formattedText = opt.text;
+
+            if (node === 'start'|| node === 'start_page_2') {
+                formattedText = formattedText
+                    .replace(/【(.*?)】/g, '<span class="btn-tag">$1</span>')
+                    .replace(/\n/g, '<br>');
+            }else {
+            // 其他劇情頁面，單純處理換行就好，不處理 【 】 標籤
+                formattedText = formattedText.replace(/\n/g, '<br>');
+            }
+            // 注意：這裡從 innerText 改成了 innerHTML，這樣 HTML 標籤才會生效
+            btn.innerHTML = formattedText; 
+
+            // 👇 以下是補齊的點擊事件與收尾括號 👇
+            btn.onclick = () => {
+                if (opt.effect !== undefined) {
+                    stability += opt.effect;
+                    if (stability > 100) stability = 100;
+                    document.getElementById('stability').innerText = stability;
+                }
+                if (stability <= 0) {
+                    alert('歷史完全崩潰！觀測失敗......再來一次！');
+                    location.reload();
+                } else {
+                    updateGame(opt.next);
+                }
+            };
+            container.appendChild(btn);
+        });
+    }   //<----function updateGame的結尾括號
+
+    function showEnd() {
+        document.getElementById('main-content').style.display = 'none';
+        const final = document.getElementById('final-score');
+        final.style.display = 'block';
+
+        // 取得目前畫面上顯示的「位置」文字（例如：熱蘭遮城、觀測完成）
+        const lastLoc = document.getElementById('loc').innerText;
+    
+        let reviewText = "";
+    
+        // 根據畫面上最後出現的地點關鍵字來給評語
+        if (lastLoc.includes("熱蘭遮城") || lastLoc.includes("大員")) {
+            reviewText = "恭喜觀測員，妳對【大航海時代的台灣】有了深刻理解，成功守護了福爾摩沙的轉折點！";
+        } else if (lastLoc.includes("馬可波羅") || lastLoc.includes("元朝")) {
+            reviewText = "恭喜觀測員，妳見證了【東西方文明的碰撞】！\n忽必烈的金牌是妳最棒的紀念品！";
+        } else if (lastLoc.includes("汴京")|| lastLoc.includes("北宋")) {
+            reviewText = "恭喜觀測員，妳對【宋朝商業制度】有了深刻理解，知道「夜市」是從北宋這個朝代開始！";
+        } else if (lastLoc.includes("怛羅斯") || lastLoc.includes("撒馬爾罕")) {
+            reviewText = "恭喜觀測員，妳對【唐朝文明傳播】有了深刻理解，「造紙術西傳」的影響力由妳親手守護！";
+        } else if (lastLoc.includes("府城")) {
+            reviewText = "恭喜觀測員，妳對【清領府城】有了深刻理解，任務圓滿達成！";
+        } else if (lastLoc.includes("林百貨") || lastLoc.includes("昭和")) {
+            reviewText = "恭喜觀測員，妳體驗了【昭和台南】的摩登生活，在林百貨的流籠裡看見了時代的進步！";
+        } else if (lastLoc.includes("三國") || lastLoc.includes("赤壁")) {
+            reviewText = "恭喜觀測員，妳對【三國風雲】有了深刻理解，成功協助孔明借箭，保住了歷史的平衡！";
+        } else if (lastLoc.includes("戰後") || lastLoc.includes("1945")) {
+            reviewText = "恭喜觀測員，妳見證了【戰後台灣】的劇烈變遷，在動盪的年代守護了珍貴的歷史記憶。";
+        } else if (lastLoc.includes("蘭亭") || lastLoc.includes("王羲之") || lastLoc.includes("曲水")) {
+            reviewText = "恭喜觀測員，妳完美融入了【魏晉名士】的生活！不但保護了蠶繭紙，還跟王羲之對酒當歌。那份醉人的墨香已永遠留在妳的記憶中。";
+        } else {
+            reviewText = "恭喜觀測員，任務圓滿達成！妳已成功守護了時空的秩序。";
+        }
+        // 結算畫面觀測員換成輸入的名稱
+        reviewText = reviewText.replace(/觀測員/, playerName);
+
+        document.getElementById('score-text').innerHTML = `
+            <p style="font-size: 1.5rem; color: #81c784;">歷史最終穩定值：${stability}%</p>
+            <p>${reviewText}</p>
+        `;
+    }
+
+    // ⭐ 新增這段：直接切換畫面回大廳的魔法
+    function returnToHub() {
+        // 1. 把結算畫面隱藏起來
+        document.getElementById('final-score').style.display = 'none';
+        
+        // 2. 把遊戲主內容區重新顯示出來
+        document.getElementById('main-content').style.display = 'block';
+        
+        // 3. 呼叫大廳節點 (妳原本在 updateGame 裡已經寫好回到 start 會自動補滿 100% 穩定值了，非常聰明！)
+        updateGame('start');
+    }
+
+</script>
+<script>
+    // #region 遊戲主頁控制
+    const scenarios = {
+        'start': {
+            loc: '時空觀測站 - 第一站台',
+            text: '妳好，${name}時空觀測員，這裡是時空觀測站 - 第一站台。\n妳將進入歷史的關鍵節點，妳的目標是守護歷史的穩定度。\n請選擇妳要進入的時間點：',
+            options: []
+        },
+        'start_page_2': {
+            loc: '時空觀測站 - 第二站台',
+            text: '${name}觀測員妳好，這裡是時空觀測站 - 第二站台。\n請選擇妳要進入的時間點：',
+            options: []
+        },
+        'end': {
+            loc: '時空觀測任務完成',
+            text: '觀測結束！妳成功守護了歷史的穩定度。\n想再次開啟時空旅行嗎？',
+            options: [
+                { text: '重新回到第一站台', next: 'start' }
+            ]
+        },
+    // #endregion
+    
+    /*----提醒自己，新增劇本時，需在上一個劇本最後的}後面加上","---*/
+        // #region 【208三國赤壁之戰】
+        'three_kingdoms_1': {
+            loc: '西元 208 年 長江江畔',
+            text: '妳來到三國時代的關鍵時刻。孫劉聯軍正對抗曹操的大軍，諸葛孔明正為了「箭不夠用」而發愁。\n身為觀測員，妳該如何協助孔明完成「草船借箭」？',
+            options: [
+                { text: '大霧之夜出動：利用江面上濃霧的掩護，靠近曹操水寨。', next: 'tk_step_2', effect: 0 },
+                { text: '白天帶人強攻：趁著光線充足，直接划船去搶箭。', next: 'tk_fail_1', effect: -20 }
+            ]
+        },
+        'tk_fail_1': {
+            loc: '歷史擾動',
+            text: '哎呀！白天出動的話，會被曹操大軍看清妳其實只有幾艘載著草人的船，直接被打回來就完蛋了！',
+            options: [{ text: '回頭修正', next: 'three_kingdoms_1' }]
+        },
+
+        'tk_step_2': {
+            loc: '草船船隊',
+            text: '江面上鼓聲大作，曹操擔心有埋伏，下令士兵拼命朝妳的船隊射箭。看著箭矢像下雪一樣落在草人身上，這時妳會怎麼做？',
+            options: [
+                { text: '調轉船頭：讓另一面的草人也能受箭，保持平衡。', next: 'tk_step_3', effect: 0 },
+                { text: '在船上跳舞：慶祝拿到很多箭，不用管船的重心。', next: 'tk_fail_2', effect: -10 }
+            ]
+        },
+        'tk_fail_2': {
+            loc: '歷史擾動',
+            text: '因為箭矢太重，重心不穩容易翻船！孔明搖頭說：「${name}觀測員，注意船的平衡啊！」',
+            options: [{ text: '回頭修正', next: 'tk_step_2' }]
+        },
+
+        'tk_step_3': {
+            loc: '決戰前夕',
+            text: '箭湊齊了，妳站在南屏山上，看見諸葛亮正在祭風。這場決戰的最後關鍵是？',
+            options: [
+                // ⭐ 把 next 改成指向專屬的成功頁面
+                { text: '直接放火：不管風往哪裡吹，放火就對了！', next: 'tk_fail_3', effect: -30 },
+                { text: '觀測風向：只要吹起東南風，火勢就會燒向曹營。', next: 'three_kingdoms_success', effect: 0 }
+            ]
+        },
+        'tk_fail_3': {
+            loc: '歷史崩壞',
+            text: '糟糕！風向不對，火就會燒到孫劉聯軍自己的營地！歷史將會被完全改寫！',
+            options: [{ text: '回頭修正', next: 'tk_step_3' }]
+        },
+        'three_kingdoms_success': {
+            loc: '東漢 三國',
+            text: '東風狂起！火船順著風勢衝向曹軍戰船，「談笑間，檣櫓灰飛煙滅」。\n這場關鍵的戰役保住了三國鼎立的局面。妳在火光中看見歷史之書漸漸發光，代表這一段的觀測任務圓滿完成！',
+            options: [
+                { text: '完成觀測', next: 'end' }
+            ]
+        },
+        // #endregion
+
+        // #region 【353蘭亭雅集】
+        // 第一階段：尋墨與鵝
+        'jin_1': {
+            loc: '會稽山陰 蘭亭',
+            text: '妳來到山陰的蘭亭，此地「有崇山峻嶺，茂林修竹」。一群名士正沿著溪水而坐。\n妳看見王羲之正對著溪中一隻神態優雅的大白鵝出神，甚至忘了手旁的墨已經乾了。妳會？',
+            options: [
+                { text: '安靜磨墨：不打擾他的靈感，默默為他準備好筆墨。', next: 'jin_step_2', effect: 0 }, // 穩定守護，不扣分
+                { text: '大聲詢問：你在畫那隻鵝嗎？', next: 'jin_fail_1', effect: -25 } // 驚擾名士，扣分
+            ]
+        },
+        'jin_fail_1': {
+            loc: '歷史擾動',
+            text: '白鵝受驚拍翅而去，王羲之嘆了口氣對妳說：「${name}觀測員，名士的靈感是很脆弱的！」',
+            options: [{ text: '回頭修正', next: 'jin_1' }]
+        },
+
+        // 第二階段：曲水流觴
+        'jin_step_2': {
+            loc: '曲水流觴',
+            text: '王羲之對妳微微點頭示謝。此時，一個盛滿美酒的羽觴（酒杯）順著溪水緩緩流到妳面前停了下來。\n按照規矩，停在誰面前，誰就得作詩一首。妳該怎麼應對？',
+            options: [
+                { text: '無酒不歡：這酒真香！我不作詩，我直接乾了！', next: 'jin_fail_2', effect: -20 },
+                { text: '吟誦詩句：以清風明月為題，吟出優美的詩句。', next: 'jin_step_3', effect: 0 } 
+            ]
+        },
+        'jin_fail_2': {
+            loc: '歷史擾動',
+            text: '妳不小心喝得太醉，差點栽進溪水裡，雅集的氣氛變得有些混亂。\n王羲之搖搖頭說：「${name}觀測員，淺酌即可，不可貪杯啊！」',
+            options: [{ text: '回頭修正', next: 'jin_step_2' }]
+        },
+
+        // 第三階段：天下第一行書
+        'jin_step_3': {
+            loc: '蘭亭集序',
+            text: '酒酣耳熱之際，王羲之起身提起筆，準備在蠶繭紙上寫下今日的集序。\n突然間，一陣狂風吹過，幾張空白的蠶繭紙被吹得四散，眼看就要落入溪水中！妳會？',
+            options: [
+                { text: '捨身救紙：快速撲向岸邊，在紙沾濕前將其救回。', next: 'jin_success', effect: 5 }, // 表現太好，獎勵恢復 5%
+                { text: '護住墨寶：不管怎樣先按住王羲之正在寫的那一張。', next: 'jin_fail_3', effect: -20 } // 珍貴紙張遺失，重扣 20%
+            ]
+        },
+        'jin_fail_3': {
+            loc: '歷史擾動',
+            text: '紙張落水化開了，王羲之因為素材遺失，無法完整記錄今日的感悟。這場雅集成了一場殘缺的聚會。',
+            options: [{ text: '回頭修正', next: 'jin_step_3' }]
+        },
+
+        'jin_success': {
+            loc: '蘭亭集序',
+            text: '紙張安全救回！王羲之在此刻揮灑自如，寫下了震撼千古的《蘭亭集序》。\n他感激地將一枚墨條贈予妳，妳在墨香中彷彿看見歷史之書穩定地發光！',
+            options: [
+                { text: '完成觀測', next: 'end' }
+            ]
+        },
+        // #endregion
+
+        // #region 【751怛羅斯戰役】
+        'tang_1': {
+            loc: '唐朝 怛羅斯',
+            text: '西元 751 年，戰鼓雷鳴。大唐軍隊與大食（阿拉伯）在怛羅斯決戰。\n結果唐軍大敗，妳身為一名隨軍工匠被俘虜了。面對阿拉伯將領的審問，妳會怎麼選擇？',
+            options: [
+                { text: '寧死不屈：絕對不洩漏造紙技術！', next: 'tang_fail', effect: -30 },
+                { text: '以技換命：傳授造紙術，換取生存與文化交流。', next: 'tang_success', effect: 0 }
+            ]
+        },
+        'tang_success': {
+            loc: '阿拉伯 撒馬爾罕',
+            text: '妳活了下來，造紙術也傳向了西方。這件事對世界文明最大的影響是？',
+            options: [
+                { text: '讓歐洲人也可以讀到中國的儒家經典。', next: 'tang_fact_1', effect: -20 },
+                { text: '降低了知識傳播的成本，取代昂貴的羊皮紙。', next: 'tang_fact_2', effect: 0 }
+            ]
+        },
+        'tang_fact_1': {
+            loc: '歷史擾動：學術偏差',
+            text: '雖然少數經典被翻譯了，但當時歐洲人更渴望的是科學與神學知識。\n歷史穩定值輕微下降。妳要修正觀測重點嗎？',
+            options: [
+                { text: '修正：改為研究「知識傳播成本」', next: 'tang_fact_2' },
+                { text: '不要！我就是要讓他們讀孔子！', next: 'tang_fail_2', effect: -20 }
+            ]
+        },
+        'tang_fact_2': {
+            loc: '唐朝 怛羅斯戰役',
+            text: '正確！造紙術西傳是人類文明的大事。妳成功觀測了「怛羅斯戰役」的深遠影響。',
+            options: [{ text: '完成觀測', next: 'end' }]
+        },
+        'tang_fail': {
+            loc: '歷史擾動',
+            text: '雖然妳很有骨氣，但歷史上這項技術最後還是傳出去了。',
+            options: [{ text: '回頭修正', next: 'tang_1', effect: 10 }]
+        },
+        'tang_fail_2': {
+            loc: '歷史擾動',
+            text: '雖然妳很堅持，但孔子在歐洲人眼裡一文不值。',
+            options: [{ text: '回頭修正', next: 'tang_fact_1', effect: 10 }]
+        },
+        // #endregion
+
+        // #region 【1000北宋汴京】
+        'song_1': {
+            loc: '北宋 汴京',
+            text: '妳在半夜三更走在街上，意外發現燈火通明。\n官府人員正在討論要不要強制實行「宵禁」，妳的建議是？',
+            options: [
+                { text: '支持宵禁：晚上就該乖乖睡覺，維護治安。', next: 'song_fail', effect: -30 },
+                { text: '反對宵禁：讓夜市自由發展，促進稅收。', next: 'song_success', effect: 0 }
+            ]
+        },
+        'song_success': {
+            loc: '北宋 汴京',
+            text: '太好了！因為妳的堅持，汴京成了不夜城！晚上可以逛夜市了！\n另外，商人為了方便交易，開始使用紙幣「交子」。妳覺得交子之所以能成功，主要是因為什麼原因？',
+            options: [
+                { text: '它是用高級紙張做的。', next: 'song_fact_1', effect: -20 },
+                { text: '它有政府或商人提供的信用保證。', next: 'song_fact_2', effect: 0 }
+            ]
+        },
+        'song_fact_1': {
+            loc: '歷史擾動',
+            text: '紙張再高級，如果沒有「信用」它就是張廢紙。歷史穩定值下降！',
+            options: [{ text: '回頭修正', next: 'song_success', effect: 10 }]
+        },
+        'song_fact_2': {
+            loc: '北宋 汴京',
+            text: '正確！信用制度讓宋朝商業達到巔峰。恭喜妳守護了這段記憶。',
+            options: [{ text: '完成觀測', next: 'end' }]
+        },
+        'song_fail': {
+            loc: '歷史崩塌',
+            text: '妳選擇了支持宵禁，結果扼殺了世界最早的城市革命！宋朝商業萎縮，歷史產生了劇烈擾動。',
+            options: [{ text: '回頭修正', next: 'song_1', effect: 10 }]
+        },
+        // #endregion
+
+        // #region 【1271馬可東遊】
+        'marco_polo_1': {
+            loc: '元朝 大都',
+            text: '妳來到元朝大都的宮廷，馬可波羅正向忽必烈描述他在東方的見聞。\n而忽必烈正盯著妳手中的「時空觀測手冊」，懷疑妳是奸細。妳會怎麼做？',
+            options: [
+                { text: '保持神祕：拒絕回答問題，引發了皇帝的猜忌。', next: 'marco_fail_1', effect: -15 }, // 引發疑慮，扣分
+                { text: '大方展示：讓忽必烈將妳視為博學的幕僚。', next: 'marco_step_2', effect: 0 } // 正確決策，不扣分
+            ]
+        },
+        'marco_fail_1': {
+            loc: '歷史擾動',
+            text: '忽必烈臉色一沉，下令將妳軟禁！馬可波羅也因為妳的關係受到牽連。歷史穩定度下降了。',
+            options: [{ text: '回頭修正', next: 'marco_polo_1', effect: 5 }]
+        },
+
+        'marco_step_2': {
+            loc: '元朝 皇宮',
+            text: '忽必烈對妳深感佩服，賜予妳象徵權力的「金牌信符」。\n隨後，馬可波羅邀請妳一同前往南方視察，路途中妳發現官員正在強徵民財，妳該怎麼辦？',
+            options: [
+                { text: '出示金牌：阻止非法徵收，維持社會穩定。', next: 'marco_success', effect: 0 }, 
+                { text: '冷眼旁觀：認為不該干涉當地行政。', next: 'marco_fail_2', effect: -20 } 
+            ]
+        },
+        'marco_fail_2': {
+            loc: '歷史擾動',
+            text: '暴動導致當地的歷史路徑發生偏移，馬可波羅的行程也被迫中斷。請${name}觀測員，再來一次。',
+            options: [{ text: '回頭修正', next: 'marco_step_2', effect: 10 }]
+        },
+
+        'marco_success': {
+            loc: '馬可波羅 同遊',
+            text: '妳成功保護了馬可波羅的旅程，讓他能順利將東方文明帶回歐洲。\n他在臨別前贈送妳一卷《東方見聞錄》草稿。觀測完畢！',
+            options: [
+                { text: '完成觀測', next: 'end' }
+            ]
+        },
+        // #endregion
+
+        // #region 【1624台灣荷據】
+        'taiwan_1': {
+            loc: '1624年 澎湖/大員',
+            text: '妳是荷蘭東印度公司的一名船醫。荷軍本想佔領澎湖，卻被明朝軍隊趕走。\n這時，妳們決定轉往一個叫「大員（今台南安平）」的地方。妳對這塊土地的第一印象是？',
+            options: [
+                { text: '這裡可以蓋城堡，作為對日本、中國貿易的轉運站。', next: 'taiwan_success', effect: 0 },
+                { text: '這裡土產豐富，我想要直接在這裡定居耕田。', next: 'taiwan_fail', effect: -20 }
+            ]
+        },
+        'taiwan_success': {
+            loc: '熱蘭遮城 (台南安平)',
+            text: '妳們蓋起了宏偉的熱蘭遮城。為了賺錢，妳需要從中國招募漢人來台灣開墾。\n妳覺得當時(西元1624年)台灣最主要的出口商品應該是？',
+            options: [
+                { text: '稻米 與 茶葉', next: 'taiwan_fact_1', effect: -15 },
+                { text: '鹿皮 與 砂糖', next: 'taiwan_fact_2', effect: 0 }
+            ]
+        },
+          'taiwan_fact_1': {
+            loc: '歷史擾動',
+            text: '登愣～雖然現在台灣有茶葉和稻米，但在西元 1624 年的大航海時代，荷蘭人更看重的是山裡的動物皮和甜甜的作物喔！',
+            options: [
+                { text: '回頭修正', next: 'taiwan_success' }
+            ]
+        },
+        'taiwan_fact_2': {
+            loc: '熱蘭遮城 碼頭',
+            text: '正確！荷蘭人大量收購鹿皮外銷日本，並鼓勵漢人種甘蔗製糖。這讓台灣正式進入國際貿易體系。\n此時妳聽說北方有人在推行新文字，那是？',
+            options: [
+                { text: '傳教士用羅馬拼音，拼寫原住民語的「新港文字」。', next: 'taiwan_end', effect: 0 },
+                { text: '鄭成功帶來的閩南語漢字。', next: 'taiwan_fail_2', effect: -10 }
+            ]
+        },
+        'taiwan_end': {
+            loc: '大員/熱蘭遮城',
+            text: '妳見證了台灣「大航海時代」的轉折點！恭喜觀測員！',
+            options: [{ text: '完成觀測', next: 'end' }]
+        },
+        'taiwan_fail': {
+            loc: '歷史擾動',
+            text: '等等！荷蘭人的目標是「貿易賺錢」而非定居，再想想看。',
+            options: [{ text: '回頭修正', next: 'taiwan_1' }]
+        },
+        'taiwan_fail_2': {
+            loc: '時空混亂',
+            text: '鄭成功是後來才來台灣的喔！現在還是荷蘭人的天下。',
+            options: [{ text: '回頭修正', next: 'taiwan_fact_2' }]
+        },
+        // #endregion
+        
+        // #region 【1860清領府城】
+        'taiwan_sugar': {
+            loc: '清領時期 府城',
+            text: '妳來到 19 世紀的台灣府城，西市場附近瀰漫著砂糖的甜味。\n妳正協助「糖郊」商人處理外銷，第一步要選擇運輸方式：',
+            options: [
+                { text: '牛車接駁：將糖膏運往安平港，準備裝船。', next: 'sugar_step_2', effect: 0 },
+                { text: '改走陸路：直接用人力背往北方銷售。', next: 'sugar_fail_1', effect: -10 }
+            ]
+        },
+        'sugar_fail_1': {
+            loc: '歷史擾動',
+            text: '哎呀！當時的砂糖外銷主要是靠海運出口，陸運效率太低且成本太高了。',
+            options: [{ text: '回頭修正', next: 'taiwan_sugar' }]
+        },
+        'sugar_step_2': {
+            loc: '安平港 碼頭',
+            text: '船隻已在待命，但此時妳聽說外國商船也想採購。妳該如何應對？',
+            options: [
+                { text: '接受洋行訂單：將砂糖賣給英美商人。', next: 'sugar_step_3', effect: 0 },
+                { text: '拒絕往來：堅持只賣給內地的買家。', next: 'sugar_fail_2', effect: -15 }
+            ]
+        },
+        'sugar_fail_2': {
+            loc: '歷史擾動',
+            text: '當時台灣開港通商後，洋行貿易是砂糖繁榮的關鍵。拒絕洋行會讓府城失去競爭力！',
+            options: [{ text: '回頭修正', next: 'sugar_step_2' }]
+        },
+        'sugar_step_3': {
+            loc: '府城 郊行',
+            text: '交易完成，這筆財富讓府城更加繁榮。最後，妳要將利潤投入哪裡？',
+            options: [
+                { text: '建設書院：回饋鄉里，培育府城人才。', next: 'end', effect: 0 },
+                { text: '非法走私：為了賺更多錢去躲避官稅。', next: 'sugar_fail_3', effect: -20 }
+            ]
+        },
+        'sugar_fail_3': {
+            loc: '歷史擾動',
+            text: '雖然走私能賺錢，但這會破壞當時的社會秩序，這不是守護歷史的做法喔！',
+            options: [{ text: '回頭修正', next: 'sugar_step_3' }]
+        },
+        // #endregion
+
+        // #region 【1932昭和林百貨】
+        'japanese_showa': {
+            loc: '昭和時期 林百貨',
+            text: '林百貨剛開幕，門口擠滿了想搭「流籠」的人。身為觀測員，妳第一站要去哪？',
+            options: [
+                { text: '走樓梯：隨意參觀各樓層的陳列櫃。', next: 'showa_fail_1', effect: -10 },
+                { text: '搭乘電梯：體驗當時最時髦的指針式電梯。', next: 'showa_step_2', effect: 0 }
+            ]
+        },
+        'showa_fail_1': {
+            loc: '觀測偏移',
+            text: '雖然走樓梯沒錯，但來到林百貨不搭電梯，就沒體驗到當年的「摩登」精髓了！',
+            options: [{ text: '回頭修正', next: 'japanese_showa' }]
+        },
+        'showa_step_2': {
+            loc: '林百貨 五樓',
+            text: '妳來到五樓餐廳，這裡有最時髦的和洋料理。妳決定點哪一道菜？',
+            options: [
+                { text: '洋風咖哩飯：品嚐當時最新潮的飲食文化。', next: 'showa_step_3', effect: 0 },
+                { text: '傳統路邊攤：在百貨公司裡找擔仔麵吃。', next: 'showa_fail_2', effect: -20 }
+            ]
+        },
+        'showa_fail_2': {
+            loc: '觀測偏移',
+            text: '當時去林百貨吃飯是非常正式的社交活動，大家都是去吃洋派料理的喔！',
+            options: [{ text: '回頭修正', next: 'showa_step_2' }]
+        },
+        'showa_step_3': {
+            loc: '林百貨 頂樓',
+            text: '最後來到頂樓，妳看見了末廣社神社。妳決定如何觀測？',
+            options: [
+                { text: '靜心參拜：感受當年台南銀座的繁華氣息。', next: 'end', effect: 0 },
+                { text: '破壞古蹟：在神社留名紀念。', next: 'showa_fail_3', effect: -40 }
+            ]
+        },
+        'showa_fail_3': {
+            loc: '歷史崩壞',
+            text: '破壞古蹟會導致時空線永久受損！請立刻停止！',
+            options: [{ text: '回頭修正', next: 'showa_step_3', effect: 10 }]
+        },
+        // #endregion
+    
+        // #region 【1945戰後台灣】
+        'post_war_1': {
+            loc: '1945年 台北街頭',
+            text: '昭和 20 年(西元1945年)，廣播傳來宣告戰爭結束的聲音。妳看見佈告欄上貼出政府的新公告，要求將所有日文名稱改成中文。\n面對這個新政策，妳第一步會做什麼？',
+            options: [
+                { text: '堅持使用日文：認為公文書寫應該維持現狀。', next: 'post_war_fail_1', effect: -15 },
+                { text: '學習注音符號：參加社區舉辦的國語補習班。', next: 'post_war_step_2', effect: 0 }
+            ]
+        },
+        'post_war_fail_1': {
+            loc: '歷史擾動',
+            text: '哎呀！隨著政權交替，「去日本化」政策迅速推行，堅持只用日文會讓妳在新的社會體系中難以適應。',
+            options: [{ text: '回頭修正', next: 'post_war_1', effect: 5 }]
+        },
+        'post_war_step_2': {
+            loc: '1949年 菜市場',
+            text: '幾年過去，妳拿著一疊「舊台幣」去買米時，老闆卻搖搖頭說：「明天就要換新錢了！妳也趕快去換吧！」\n政府宣佈實施「四萬換一塊」，妳的想法是？',
+            options: [
+                { text: '忍痛兌換：接受現實，換取新幣維持生活。', next: 'post_war_step_3', effect: 0 },
+                { text: '抗議拒換：認為這是政府不合理的剝削。', next: 'post_war_fail_2', effect: -20 }
+            ]
+        },
+        'post_war_fail_2': {
+            loc: '歷史擾動',
+            text: '雖然這項政策對人民財產造成巨大損失，但如果不兌換，這些舊台幣將變成廢紙，妳會連1塊錢都沒有，無法生存！',
+            options: [{ text: '回頭修正', next: 'post_war_step_2', effect: 10 }]
+        },
+
+        'post_war_step_3': {
+            loc: '1950年代 街頭轉角',
+            text: '生活漸漸穩定，妳在街角看見了美國支援的物資，像是印有「中美合作」字樣的麵粉袋。\n人們開始嘗試用麵粉製作各種食物，這時的妳決定：',
+            options: [
+                { text: '排斥外援：堅持只吃白米，不接受援助。', next: 'post_war_fail_3', effect: -15 },
+                { text: '領取物資：將麵粉袋縫成孩子內褲，節省生活。', next: 'end', effect: 0 }
+            ]
+        },
+        'post_war_fail_3': {
+            loc: '歷史擾動',
+            text: '當時台灣糧食短缺，「美援」是撐起民生與經濟的重要支柱，拒絕它將會錯過一段重要的歷史記憶！',
+            options: [{ text: '回頭修正', next: 'post_war_step_3' }]
+        }
+
+        // #endregion
+    
+    };
+
+    let playerName = "007"; 
+
+    // ⭐ 新增：按下「啟動時空傳送」後會執行的功能
+    function initGame() {
+        // 抓取輸入框的名字
+        const inputName = document.getElementById('player-name-input').value.trim();
+        if (inputName !== "") {
+            playerName = inputName; // 如果有輸入，就替換成輸入的名字
+        }
+        
+        // 把名字顯示到上方的狀態列
+        document.getElementById('player-name-display').innerText = playerName;
+        
+        // 隱藏登入畫面，顯示遊戲主畫面
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'block';
+        
+        // 正式啟動第一關劇本
+        updateGame('start');
+    }
+</script>
+
+</body>
+</html>
