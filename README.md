@@ -1,3 +1,5 @@
+觀測站傳送門→ https://dream-my-dream.github.io/little-game-001/
+
 🌌 [觀測紀錄：代號Xizuku] 跨時空偏離修正儀
 
 「這不是 Bug，這是時空不穩定的自然現象。」
